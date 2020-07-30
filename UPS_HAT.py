@@ -211,10 +211,10 @@ if __name__=='__main__':
         print("Percent:       {:3.1f}%".format(p))
         print("")
 
-        if p < 5:
-                print('poweroff')
-                sudoPassword = 'raspberry'
-                command = 'poweroff'
-                os.system('echo %s|sudo -S %s' % (sudoPassword, command))
+        # if p < 5:
+        #         print('poweroff')
+        #         sudoPassword = 'raspberry'
+        #         command = 'poweroff'
+        #         os.system('echo %s|sudo -S %s' % (sudoPassword, command))
 
-        time.sleep(2)
+        time.sleep(5)

@@ -60,10 +60,10 @@ fbfile="tvservice -s"
 #charging no load: 4.85V max (full bat)
 #charging es load: 4.5V max
 
-vmax = {"discharging": 3.95,
-        "charging"   : 8.16 }
-vmin = {"discharging": 3.2,
-        "charging"   : 4.25 }
+vmax = {"discharging": 8.136,
+        "charging"   : 8.136 }
+vmin = {"discharging": 6.112,
+        "charging"   : 6.336 }
 icons = { "discharging": [ "alert_red", "alert", "20", "30", "30", "50", "60",
                            "60", "80", "90", "full", "full" ],
           "charging"   : [ "charging_20", "charging_20", "charging_20",
@@ -281,15 +281,19 @@ class InterfaceState(Enum):
 #  -  16 = +/-0.256V
 # See table 3 in the ADS1015i/ADS1115 datasheet for more info on gain.
 
-def translate_bat(voltage):
-  # Figure out how 'wide' each range is
-  state = voltage <= vmax["discharging"] and "discharging" or "charging"
+ina219 = INA219(addr=0x42)
 
-  leftSpan = vmax[state] - vmin[state]
+def translate_bat(voltage):
+  global ina219
+
+  if ina219.getCurrent_mA() > 0:
+    state = "charging"
+  else:
+    state = "discharging"
+
   rightSpan = len(icons[state]) - 1
 
-  # Convert the left range into a 0-1 range (float)
-  valueScaled = float(voltage - vmin[state]) / float(leftSpan)
+  valueScaled = (voltage - 6)/2.4
 
   # Convert the 0-1 range into a value in the right range.
   return icons[state][int(round(valueScaled * rightSpan))]
@@ -382,8 +386,7 @@ def environment():
   return val
 
 def battery():
-  global battery_level, overlay_processes, battery_history
-  ina219 = INA219(addr=0x42)
+  global battery_level, overlay_processes, battery_history, ina219
   value = ina219.getBusVoltage_V()
 
   battery_history.append(value)
@@ -393,11 +396,11 @@ def battery():
     level_icon="unknown"
 
 
-  if value <= 3.2:
-    my_logger.warn("Battery voltage at or below 3.2V. Initiating shutdown within 1 minute")
+  if value <= 6.5:
+    my_logger.warn("Battery voltage at or below 6.5V. Initiating shutdown within 30 seconds")
 
     subprocess.Popen(pngview_call + [str(int(resolution[0]) / 2 - 64), "-y", str(int(resolution[1]) / 2 - 64), icon_battery_critical_shutdown])
-    os.system("sleep 60 && sudo poweroff &")
+    os.system("sleep 30 && sudo poweroff &")
 
   if level_icon != battery_level:
     if "bat" in overlay_processes:
@@ -441,4 +444,4 @@ while True:
     bt_state.name,
     env
   ))
-  time.sleep(20)
+  time.sleep(5)
