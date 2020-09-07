@@ -281,7 +281,10 @@ class InterfaceState(Enum):
 #  -  16 = +/-0.256V
 # See table 3 in the ADS1015i/ADS1115 datasheet for more info on gain.
 
-ina219 = INA219(addr=0x42)
+try:
+	ina219 = INA219(addr=0x42)
+except IOError:
+	print("IOError")
 
 def translate_bat(voltage):
   global ina219
@@ -431,10 +434,15 @@ resolution=re.search("(\d{3,}x\d{3,})", subprocess.check_output(fbfile.split()).
 my_logger.info(resolution)
 
 while True:
-  (battery_level, value) = battery()
+  try:
+  	(battery_level, value) = battery()
+  except NameError:
+  	print("NameError")
+  	value = 100
   wifi_state = wifi()
   bt_state = bluetooth()
   env = environment()
+
   my_logger.info("%s,median: %.2f, %s,icon: %s,wifi: %s,bt: %s, throttle: %#0x" % (
     datetime.now(),
     value,
